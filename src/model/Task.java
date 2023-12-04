@@ -1,14 +1,14 @@
 package model;
 
 public class Task {
-    private final String NAME;
-    private final String DESCRIPTION;
+    private String name;
+    private String description;
     private int id;
     private String status;
 
-    public Task(String NAME, String description, String status) {
-        this.NAME = NAME;
-        this.DESCRIPTION = description;
+    public Task(String name, String description, String status) {
+        this.name = name;
+        this.description = description;
         this.id = -1;
         this.status = status;
     }
@@ -31,8 +31,8 @@ public class Task {
 
     @Override
     public String toString() {
-        return "NAME='" + NAME.length() + '\'' +
-                ", DESCRIPTION='" + DESCRIPTION.length() + '\'' +
+        return "NAME='" + name.length() + '\'' +
+                ", description='" + description.length() + '\'' +
                 ", id=" + id +
                 ", status='" + status;
     }
