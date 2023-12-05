@@ -20,45 +20,57 @@ public class Manager {
     }
 
     public int createTask(Task task) {
-        task.setId(nextId);
-        tasks.add(task);
-        nextId++;
-        return task.getId();
-    }
-/*Методы создания Subtask и Epic я не переписывал и вот почему.
-*
-* В ТЗ про то, зависит ли создание Subtask от Epic или наоборот, нигде не сказано((
-* Про то, что "эпик может быть без подзадач, а подзадача нет".
-*
-* Я просто подумал, все будет зависить уже потом от того, как разрешить пользователю создавать задачи.
-* Моя идея в том, что при создании эпика обязательно сначала надо создать подзадачи,
-* другого выбора у пользователя не будет.
-*
-* После подзадач пользователь создает эпик. Менеджер связывает только что созданные подзадачи с эпиком,
-* таким образом в списке подзадач не остается несвязанных с эпиком объектов.
-* Если, допустим, из эпика удалили все подзадачи, и у него поменялся статус,
-* это не сломает логику: ведь, чтобы обновить эпик, согласно ТЗ, надо передать новый объект эпика,
-* то есть снова запуститься процесс создать подзадачи, связать с новым эпиком.
-*
-* Несвязанных подзадач в списке не будет к этому моменту, ошибки не произойдет*/
-    public int createSubtask(Subtask subtask) {
-        subtask.setId(nextId);
-        subtasks.add(subtask);
-        nextId++;
-        return subtask.getId();
+        boolean doesIdExist = false;
+        for (Task duty : tasks) {
+            if (duty.getId() == nextId) {
+                doesIdExist = true;
+                break;
+            }
+        }
+        if (!doesIdExist) {
+            task.setId(nextId);
+            tasks.add(task);
+            nextId++;
+            return task.getId();
+        }
+        return -1;
     }
 
     public int createEpic(Epic epic) {
-        epic.setId(nextId);
-        for (Subtask subtask : subtasks) {
-            if (subtask.getEpicId() == -1) {
-                subtask.setEpicId(epic.getId());
-                epic.getSubtaskIds().add(subtask.getId());
+        boolean doesIdExist = false;
+        for (Epic duty : epics) {
+            if (duty.getId() == nextId) {
+                doesIdExist = true;
+                break;
             }
         }
-        epics.add(epic);
-        nextId++;
-        return epic.getId();
+        if (!doesIdExist) {
+            epic.setId(nextId);
+            epics.add(epic);
+            nextId++;
+            return epic.getId();
+        }
+        return -1;
+    }
+
+    public int createSubtask(Subtask subtask, int epicId) {
+        boolean doesIdExist = false;
+        for (Subtask duty : subtasks) {
+            if (duty.getId() == nextId) {
+                doesIdExist = true;
+                break;
+            }
+        }
+        if (!doesIdExist) {
+            subtask.setId(nextId);
+            subtasks.add(subtask);
+            nextId++;
+            subtask.setEpicId(epicId);
+            int subtaskId = subtask.getId();
+            getEpic(epicId).getSubtaskIds().add(subtaskId);
+            return subtaskId;
+        }
+        return -1;
     }
 
     public ArrayList<Task> getTasks() {
@@ -139,17 +151,22 @@ public class Manager {
     }
 
     private void changeEpicStatus(Epic epic) {
-        ArrayList<Subtask> subtasks = getEpicSubtasks(epic.getId());
-
         if (subtasks.isEmpty()) {
+            ArrayList<Integer> emptyList = new ArrayList<>();
+            epic.setSubtaskIds(emptyList);
             epic.setStatus("NEW");
         } else {
-            for (Subtask subtask : subtasks) {
-                if (!subtask.getStatus().equals("DONE")) {
-                    epic.setStatus("IN_PROGRESS");
-                    break;
-                } else {
-                    epic.setStatus("DONE");
+            ArrayList<Subtask> subtasks = getEpicSubtasks(epic.getId());
+            if (subtasks.isEmpty()) {
+                epic.setStatus("NEW");
+            } else {
+                for (Subtask subtask : subtasks) {
+                    if (!subtask.getStatus().equals("DONE")) {
+                        epic.setStatus("IN_PROGRESS");
+                        break;
+                    } else {
+                        epic.setStatus("DONE");
+                    }
                 }
             }
         }
@@ -187,9 +204,7 @@ public class Manager {
     public void deleteSubtasks() {
         subtasks.clear();
         for (Epic epic : epics) {
-            ArrayList<Integer> emptyList = new ArrayList<>();
-            epic.setSubtaskIds(emptyList);
-            epic.setStatus("NEW");
+            changeEpicStatus(epic);
         }
     }
 
