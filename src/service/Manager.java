@@ -67,7 +67,9 @@ public class Manager {
             nextId++;
             subtask.setEpicId(epicId);
             int subtaskId = subtask.getId();
-            getEpic(epicId).getSubtaskIds().add(subtaskId);
+            Epic epic = getEpic(epicId);
+            epic.getSubtaskIds().add(subtaskId);
+            changeEpicStatus(epic);
             return subtaskId;
         }
         return -1;
@@ -152,8 +154,6 @@ public class Manager {
 
     private void changeEpicStatus(Epic epic) {
         if (subtasks.isEmpty()) {
-            ArrayList<Integer> emptyList = new ArrayList<>();
-            epic.setSubtaskIds(emptyList);
             epic.setStatus("NEW");
         } else {
             ArrayList<Subtask> subtasks = getEpicSubtasks(epic.getId());
@@ -204,6 +204,7 @@ public class Manager {
     public void deleteSubtasks() {
         subtasks.clear();
         for (Epic epic : epics) {
+            epic.getSubtaskIds().clear();
             changeEpicStatus(epic);
         }
     }
