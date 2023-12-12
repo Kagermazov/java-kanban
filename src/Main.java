@@ -26,7 +26,7 @@ public class Main {
         int task2Id = taskManager.createTask(task2);
 
         int epic1Id = taskManager.createEpic(epic1);
-//        System.out.println(taskManager.getEpics() + "\n");
+        System.out.println(taskManager.getEpics() + "\n");
         int subtask1_1Id = taskManager.createSubtask(subtask1_1, epic1Id);
         int subtask1_2Id = taskManager.createSubtask(subtask1_2, epic1Id);
 
@@ -34,10 +34,10 @@ public class Main {
         int subtask2Id = taskManager.createSubtask(subtask2, epic2Id);
 
         int epic3Id = taskManager.createEpic(epic3);
-
+//
 //        System.out.println(taskManager.getTasks() + "\n");
-//        System.out.println(taskManager.getEpics() + "\n");
-//        System.out.println(taskManager.getSubtasks() + "\n");
+        System.out.println(taskManager.getEpics() + "\n");
+        System.out.println(taskManager.getSubtasks() + "\n");
 
 //        Task newTask1 = new Task("", "", Status.IN_PROGRESS);
 //        taskManager.updateTask(newTask1, task1Id);
@@ -64,24 +64,24 @@ public class Main {
 //        taskManager.deleteEpic(epic1Id);
 //        System.out.println(taskManager.getEpics() + "\n");
 //        System.out.println(taskManager.getSubtasks() + "\n");
-//
+
 //        taskManager.deleteSubtask(subtask2Id);
 //        System.out.println(taskManager.getEpic(epic2Id) + "\n");
 //
 //        taskManager.deleteSubtasks();
 //        System.out.println(taskManager.getEpics() + "\n");
 
-//        taskManager.getTask(task1Id);
-//        taskManager.getTask(task2Id);
-//        taskManager.getEpic(epic1Id);
-//        taskManager.getSubtask(subtask2Id);
-//        taskManager.getTask(task1Id);
-//        taskManager.getTask(task1Id);
-//        taskManager.getTask(task1Id);
-//        taskManager.getTask(task1Id);
-//        taskManager.getTask(task1Id);
-//        taskManager.getTask(task1Id);
-//        taskManager.getTask(task1Id);
+        taskManager.getTask(task1Id);
+        taskManager.getTask(task2Id);
+        taskManager.getEpic(epic1Id);
+        taskManager.getSubtask(subtask2Id);
+        taskManager.getTask(task1Id);
+        taskManager.getTask(task1Id);
+        taskManager.getTask(task1Id);
+        taskManager.getTask(task1Id);
+        taskManager.getTask(task1Id);
+        taskManager.getTask(task1Id);
+        taskManager.getTask(task1Id);
 
         for (Task task : taskManager.getHistory()) {
             System.out.println(task);
