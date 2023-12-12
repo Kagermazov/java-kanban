@@ -1,14 +1,15 @@
 package service;
 
-import model.Task;
+public class Managers {
 
-public class Managers<T extends Task> {
-
-    public TaskManager<T> getDefault() {
-        return new InMemoryTaskManager<>();
+    private Managers() {
     }
 
-    static HistoryManager getDefaultHistory() {
+    public static TaskManager getDefault() {
+        return new InMemoryTaskManager();
+    }
+
+    public static HistoryManager getDefaultHistory() {
         return new InMemoryHistoryManager();
     }
 }
