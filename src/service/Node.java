@@ -7,7 +7,9 @@ import model.Task;
     Node next;
     Node prev;
 
-    Node(Task data) {
-        this.data = data;
-    }
+     public Node(Task task, Node prev, Node next) {
+         this.data = task;
+         this.prev = prev;
+         this.next = next;
+     }
 }

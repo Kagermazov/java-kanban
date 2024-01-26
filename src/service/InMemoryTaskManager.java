@@ -156,50 +156,42 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void deleteEpic(int id) {
-        for (Integer identify : getEpic(id).getSubtaskIds()) {
+        List<Integer> subtaskIds = getEpic(id).getSubtaskIds();
+
+        for (Integer subtaskId : subtaskIds) {
             for (Task task : this.historyManager.getHistory()) {
-                if (task.getId() == identify) {
-                    this.historyManager.remove(identify);
-                }
+                int taskId = task.getId();
+
+                if (taskId == subtaskId)
+                    this.historyManager.remove(taskId);
             }
         }
 
+        this.historyManager.remove(id);
         this.subtasks.removeIf(subtask -> subtask.getEpicId() == id);
         this.epics.removeIf(epic -> epic.getId() == id);
-        this.historyManager.remove(id);
     }
 
     @Override
     public void deleteTasks() {
-        for (Task task : this.tasks) {
-            this.historyManager.remove(task.getId());
-        }
-
+        this.tasks.forEach(task -> this.historyManager.remove(task.getId()));
         this.tasks.clear();
     }
 
     @Override
     public void deleteSubtasks() {
-        for (Subtask subtask : this.subtasks) {
-            this.historyManager.remove(subtask.getId());
-        }
-
-        this.subtasks.clear();
-
-        for (Epic epic : this.epics) {
+        clearSubtasks();
+        this.epics.forEach(epic -> {
             epic.getSubtaskIds().clear();
             changeEpicStatus(epic);
-        }
+        });
     }
 
     @Override
     public void deleteEpics() {
-        deleteSubtasks();
-
-        for (Epic epic : this.epics) {
-            this.historyManager.remove(epic.getId());
-        }
-
+        //убрал вызов публичного метода тут. А где можно почитать про этот антипаттерн?
+        clearSubtasks();
+        this.epics.forEach(epic -> this.historyManager.remove(epic.getId()));
         this.epics.clear();
     }
 
@@ -236,5 +228,10 @@ public class InMemoryTaskManager implements TaskManager {
         }
 
         return task;
+    }
+
+    private void clearSubtasks() {
+        this.subtasks.forEach(subtask -> this.historyManager.remove(subtask.getId()));
+        this.subtasks.clear();
     }
 }
