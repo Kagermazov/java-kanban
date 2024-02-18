@@ -7,12 +7,14 @@ public class Task {
     private String description;
     private int id;
     private Status status;
+    private TaskTypes type;
 
-    public Task(String name, String description, Status status) {
+    public Task(String name, String description, Status status, TaskTypes type) {
         this.name = name;
         this.description = description;
         this.id = -1;
         this.status = status;
+        this.type = type;
     }
 
     @Override
@@ -20,20 +22,32 @@ public class Task {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Task task = (Task) o;
-        return id == task.id;
+        return this.id == task.id;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return Objects.hash(this.id);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     public int getId() {
-        return id;
+        return this.id;
     }
 
     public Status getStatus() {
-        return status;
+        return this.status;
+    }
+
+    public TaskTypes getType() {
+        return type;
     }
 
     public void setId(int id) {
@@ -46,9 +60,9 @@ public class Task {
 
     @Override
     public String toString() {
-        return "NAME='" + name.length() + '\'' +
-                ", description='" + description.length() + '\'' +
-                ", id=" + id +
-                ", status='" + status;
+        return "NAME='" + this.name + '\'' +
+                ", description='" + this.description + '\'' +
+                ", id=" + this.id +
+                ", status='" + this.status;
     }
 }

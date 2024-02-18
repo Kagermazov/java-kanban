@@ -14,16 +14,20 @@ public class InMemoryHistoryManager implements HistoryManager {
 
     @Override
     public List<Task> getHistory() {
-        return this.getTasks();
+        return getTasks();
     }
 
     @Override
     public void add(Task task) {
-        if (task == null) return;
+        if (task == null) {
+            return;
+        }
 
         int taskId = task.getId();
 
-        if (idToTask.containsKey(taskId)) this.remove(taskId);
+        if (idToTask.containsKey(taskId)) {
+            this.remove(taskId);
+        }
 
         this.linkLast(task);
 
@@ -72,6 +76,6 @@ public class InMemoryHistoryManager implements HistoryManager {
             Node next = node.next;
             prev.next = next;
             next.prev = prev;
-            }
         }
     }
+}

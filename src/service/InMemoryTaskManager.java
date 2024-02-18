@@ -23,13 +23,14 @@ public class InMemoryTaskManager implements TaskManager {
         this.historyManager = Managers.getDefaultHistory();
     }
 
+    public HistoryManager getHistoryManager() {
+        return this.historyManager;
+    }
+
     @Override
     public int createTask(Task task) {
-/*Здесь и методах createEpic(Epic epic) и createSubtask(Subtask subtask, int epicId) проверялось, занят ли nextId,
-но я решил, что, поскольку поле nextId не меняется извне, его меняют только методы этого же класса,
-то эта проверка излишне*/
         task.setId(this.nextId);
-        this.tasks.add(task);
+        addTaskDirectly(task);
         this.nextId++;
         return task.getId();
     }
@@ -37,7 +38,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public int createEpic(Epic epic) {
         epic.setId(this.nextId);
-        this.epics.add(epic);
+        addTaskDirectly(epic);
         this.nextId++;
         return epic.getId();
     }
@@ -45,12 +46,12 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public int createSubtask(Subtask subtask, int epicId) {
         subtask.setId(this.nextId);
-        this.subtasks.add(subtask);
+        addTaskDirectly(subtask);
         this.nextId++;
         subtask.setEpicId(epicId);
 
         int subtaskId = subtask.getId();
-        Epic epic = findTask(epicId, this.epics);
+        Epic epic = (Epic) findTask(epicId, this.epics);
 
         epic.getSubtaskIds().add(subtaskId);
         changeEpicStatus(epic);
@@ -79,12 +80,12 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public Subtask getSubtask(int subtaskId) {
-        return getTaskFromAndSaveToHistory(subtaskId, this.subtasks);
+        return (Subtask) getTaskFromAndSaveToHistory(subtaskId, this.subtasks);
     }
 
     @Override
     public Epic getEpic(int epicId) {
-        return getTaskFromAndSaveToHistory(epicId, this.epics);
+        return (Epic) getTaskFromAndSaveToHistory(epicId, this.epics);
     }
 
     @Override
@@ -116,23 +117,30 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public void updateSubtask(Subtask subtask, int subtaskId) {
 
-        Subtask storedDuty = findTask(subtaskId, this.subtasks);
+        Subtask storedDuty = (Subtask) findTask(subtaskId, this.subtasks);
         int epicId = storedDuty.getEpicId();
 
         subtask.setId(storedDuty.getId());
         subtask.setEpicId(epicId);
         this.subtasks.set(this.subtasks.indexOf(storedDuty), subtask);
 
-        Epic epic = findTask(epicId, this.epics);
+        Epic epic = (Epic) findTask(epicId, this.epics);
         changeEpicStatus(epic);
     }
 
     @Override
     public void updateEpic(Epic epic, int epicId) {
-        Epic storedEpic = findTask(epicId, this.epics);
+        Epic storedEpic = (Epic) findTask(epicId, this.epics);
 
         this.epics.set(this.epics.indexOf(storedEpic), epic);
-        this.subtasks.removeIf(subtask -> subtask.getEpicId() == epicId);
+
+        for (Task task : this.subtasks) {
+            Subtask subtask = (Subtask) task;
+
+            if (subtask.getEpicId() == epicId) {
+                this.subtasks.remove(subtask);
+            }
+        }
     }
 
     @Override
@@ -143,13 +151,16 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void deleteSubtask(int id) {
-        for (Epic epic : this.epics) {
+        for (Task value : this.epics) {
+            Epic epic = (Epic) value;
             ArrayList<Integer> subtasksIds = epic.getSubtaskIds();
+
             if (subtasksIds.contains(id)) {
                 subtasksIds.remove((Integer) id);
                 changeEpicStatus(epic);
             }
         }
+
         this.subtasks.removeIf(task -> task.getId() == id);
         this.historyManager.remove(id);
     }
@@ -168,7 +179,15 @@ public class InMemoryTaskManager implements TaskManager {
         }
 
         this.historyManager.remove(id);
-        this.subtasks.removeIf(subtask -> subtask.getEpicId() == id);
+
+        for (Task task : this.subtasks) {
+            Subtask subtask = (Subtask) task;
+
+            if (subtask.getEpicId() == id) {
+                this.subtasks.remove(subtask);
+            }
+        }
+
         this.epics.removeIf(epic -> epic.getId() == id);
     }
 
@@ -181,18 +200,34 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public void deleteSubtasks() {
         clearSubtasks();
-        this.epics.forEach(epic -> {
+
+        for (Task task : this.epics) {
+            Epic epic = (Epic) task;
+
             epic.getSubtaskIds().clear();
             changeEpicStatus(epic);
-        });
+        }
     }
 
     @Override
     public void deleteEpics() {
-        //убрал вызов публичного метода тут. А где можно почитать про этот антипаттерн?
         clearSubtasks();
         this.epics.forEach(epic -> this.historyManager.remove(epic.getId()));
         this.epics.clear();
+    }
+
+    protected void addTaskDirectly(Task task) {
+        switch (task.getType()) {
+            case TASK:
+                this.tasks.add(task);
+                break;
+            case EPIC:
+                this.epics.add((Epic) task);
+                break;
+            case SUBTASK:
+                this.subtasks.add((Subtask) task);
+                break;
+        }
     }
 
     private void changeEpicStatus(Epic epic) {
@@ -220,7 +255,22 @@ public class InMemoryTaskManager implements TaskManager {
         return null;
     }
 
-    private <T extends Task> T getTaskFromAndSaveToHistory(int taskId, List<T> tasksList) {
+    protected Task getById(int id) {
+        Task task = findTask(id, this.tasks);
+
+        if (task != null) {
+            return task;
+        }
+
+        Task epic = findTask(id, this.epics);
+        if (epic != null) {
+            return epic;
+        }
+
+        return findTask(id, this.subtasks);
+    }
+
+    protected <T extends Task> T getTaskFromAndSaveToHistory(int taskId, List<T> tasksList) {
         T task = findTask(taskId, tasksList);
 
         if (task != null) {
@@ -230,7 +280,7 @@ public class InMemoryTaskManager implements TaskManager {
         return task;
     }
 
-    private void clearSubtasks() {
+    protected void clearSubtasks() {
         this.subtasks.forEach(subtask -> this.historyManager.remove(subtask.getId()));
         this.subtasks.clear();
     }
