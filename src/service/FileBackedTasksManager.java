@@ -115,7 +115,7 @@ public class FileBackedTasksManager extends InMemoryTaskManager implements TaskM
         save();
     }
 
-    private void save() throws ManagerSaveException {
+    private void save() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(this.csv))) {
             writer.write("id,type,name,status,description,epic\n");
 
@@ -153,31 +153,29 @@ public class FileBackedTasksManager extends InMemoryTaskManager implements TaskM
                 lines.add(reader.readLine());
             }
         } catch (FileNotFoundException e) {
-            System.out.println("The file isn`t found.");
+            throw new FileNotFoundException("The file isn`t found.");
         }
 
-        int lineSize = lines.size();
-        int secondToLastLine = lineSize - 2;
-
-        for (int i = 1; i < secondToLastLine; i++) {
+        for (int i = 1; i < lines.size(); i++) {
             String line = lines.get(i);
-            Task taskEntity = fromString(line);
 
-            manager.addTaskDirectly(taskEntity);
-        }
+            if (line.isEmpty()) {
+                List<Integer> tasksInHistory = historyFromString(lines.get(i + 1));
 
-        if (lines.get(secondToLastLine).isEmpty()) {
-            List<Integer> tasksInHistory = historyFromString(lines.get(lineSize - 1));
+                for (Integer id : tasksInHistory) {
+                    Task foundTask = manager.getById(id);
 
-            for (Integer id : tasksInHistory) {
-                Task foundTask = manager.getById(id);
-
-                if (foundTask != null) {
-                    manager.getHistoryManager().add(foundTask);
-                } else {
-                    throw new IllegalStateException("Task by id " + id + " isn`t found for history recreation");
+                    if (foundTask != null) {
+                        manager.getHistoryManager().add(foundTask);
+                    } else {
+                        throw new IllegalStateException("Task by id " + id + " isn`t found for history recreation");
+                    }
                 }
+                break;
             }
+
+            Task taskEntity = fromString(line);
+            manager.addTaskDirectly(taskEntity);
         }
 
         return manager;
@@ -260,20 +258,12 @@ public class FileBackedTasksManager extends InMemoryTaskManager implements TaskM
     }
 
     public static void main(String[] args) throws IOException {
-        File file = new File("C:\\Users\\Sergey\\dev\\java-kanban\\src\\history.csv");
+        File csvFile = new File("C:\\Users\\Sergey\\dev\\java-kanban\\src\\history.csv");
+        FileBackedTasksManager fileBackedTasksManager = FileBackedTasksManager.loadFromFile(csvFile);
 
-        FileBackedTasksManager fileBackedTasksManager = FileBackedTasksManager.loadFromFile(file);
+   /*     Task task = fileBackedTasksManager.getEpic(4);
 
-        Task task = fileBackedTasksManager.getEpic(4);
-//
-        fileBackedTasksManager.getEpic(2);
-        fileBackedTasksManager.getTask(1);
-        fileBackedTasksManager.getEpic(4);
-        fileBackedTasksManager.getEpic(2);
-//        fileBackedTasksManager.getEpic(2);
-//        System.out.println(task.toString());
-
-       /* fileBackedTasksManager.createTask(
+        fileBackedTasksManager.createTask(
                 new Task("Task1", "Description task1", Status.NEW, TaskTypes.TASK));
 
         int epicId1 = fileBackedTasksManager.createEpic(
@@ -285,11 +275,17 @@ public class FileBackedTasksManager extends InMemoryTaskManager implements TaskM
 
         fileBackedTasksManager.createEpic(
                 new Epic("Epic2", "Description epic2", Status.IN_PROGRESS, TaskTypes.EPIC));
+*/
+        fileBackedTasksManager.getTask(1);
 
-        fileBackedTasksManager.getTask(1);*/
+        fileBackedTasksManager.getEpic(2);
+        fileBackedTasksManager.getTask(1);
+        fileBackedTasksManager.getEpic(4);
+        fileBackedTasksManager.getEpic(2);
+        fileBackedTasksManager.getEpic(2);
+//        System.out.println(task.toString());
 
-
-//        FileBackedTasksManager fileManager = new FileBackedTasksManager(file);
+        FileBackedTasksManager fileManager = new FileBackedTasksManager(csvFile);
 //        printHistory(fileManager);
     }
 
