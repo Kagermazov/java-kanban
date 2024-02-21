@@ -192,38 +192,43 @@ public class FileBackedTasksManager extends InMemoryTaskManager implements TaskM
 
     private static Task fromString(String value) {
         String[] taskCharacteristics = value.split(",");
-        TaskTypes type = TaskTypes.valueOf(taskCharacteristics[1]);
+        final TaskTypes type = TaskTypes.valueOf(taskCharacteristics[1]);
+        final String name = taskCharacteristics[2];
+        final String description = taskCharacteristics[4];
+        final String status = taskCharacteristics[3];
+        final String epicId = taskCharacteristics[5];
+        final String subtaskId = taskCharacteristics[0];
 
         if (type == TaskTypes.SUBTASK) {
             Subtask regeneratedSubtask = new Subtask(
-                    taskCharacteristics[2],
-                    taskCharacteristics[4],
-                    Status.valueOf(taskCharacteristics[3]),
+                    name,
+                    description,
+                    Status.valueOf(status),
                     type
             );
 
-            regeneratedSubtask.setEpicId(Integer.parseInt(taskCharacteristics[5]));
-            regeneratedSubtask.setId(Integer.parseInt(taskCharacteristics[0]));
+            regeneratedSubtask.setEpicId(Integer.parseInt(epicId));
+            regeneratedSubtask.setId(Integer.parseInt(subtaskId));
             return regeneratedSubtask;
         } else if (type == TaskTypes.EPIC) {
             Epic regeneratedEpic = new Epic(
-                    taskCharacteristics[2],
-                    taskCharacteristics[4],
-                    Status.valueOf(taskCharacteristics[3]),
+                    name,
+                    description,
+                    Status.valueOf(status),
                     type
             );
 
-            regeneratedEpic.setId(Integer.parseInt(taskCharacteristics[0]));
+            regeneratedEpic.setId(Integer.parseInt(subtaskId));
             return regeneratedEpic;
         } else {
             Task regeneratedtask = new Task(
-                    taskCharacteristics[2],
-                    taskCharacteristics[4],
-                    Status.valueOf(taskCharacteristics[3]),
+                    name,
+                    description,
+                    Status.valueOf(status),
                     type
             );
 
-            regeneratedtask.setId(Integer.parseInt(taskCharacteristics[0]));
+            regeneratedtask.setId(Integer.parseInt(subtaskId));
             return regeneratedtask;
         }
     }
