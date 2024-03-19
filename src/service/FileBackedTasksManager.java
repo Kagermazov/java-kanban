@@ -262,11 +262,11 @@ public class FileBackedTasksManager extends InMemoryTaskManager implements TaskM
         return result;
     }
 
-    public static void main(String[] args) throws IOException {
+   /* public static void main(String[] args) throws IOException {
         File csvFile = new File("C:\\Users\\Sergey\\dev\\java-kanban\\src\\history.csv");
         FileBackedTasksManager fileBackedTasksManager = FileBackedTasksManager.loadFromFile(csvFile);
 
-   /*     Task task = fileBackedTasksManager.getEpic(4);
+    Task task = fileBackedTasksManager.getEpic(4);
 
         fileBackedTasksManager.createTask(
                 new Task("Task1", "Description task1", Status.NEW, TaskTypes.TASK));
@@ -280,7 +280,7 @@ public class FileBackedTasksManager extends InMemoryTaskManager implements TaskM
 
         fileBackedTasksManager.createEpic(
                 new Epic("Epic2", "Description epic2", Status.IN_PROGRESS, TaskTypes.EPIC));
-*/
+
         fileBackedTasksManager.getTask(1);
 
         fileBackedTasksManager.getEpic(2);
@@ -288,11 +288,11 @@ public class FileBackedTasksManager extends InMemoryTaskManager implements TaskM
         fileBackedTasksManager.getEpic(4);
         fileBackedTasksManager.getEpic(2);
         fileBackedTasksManager.getEpic(2);
-//        System.out.println(task.toString());
+       System.out.println(task.toString());
 
         FileBackedTasksManager fileManager = new FileBackedTasksManager(csvFile);
-//        printHistory(fileManager);
-    }
+        printHistory(fileManager);
+    }*/
 
     private static void printHistory(TaskManager taskManager) {
         List<Task> history = taskManager.getHistory();

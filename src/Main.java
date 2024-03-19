@@ -2,11 +2,13 @@ import model.*;
 import service.Managers;
 import service.TaskManager;
 
+import java.io.File;
 import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        TaskManager taskManager = Managers.getDefault();
+        TaskManager taskManager = Managers.getDefault(new File(
+                "C:\\Users\\Sergey\\dev\\java-kanban\\src\\history.csv"));
 
         int task1Id = taskManager.createTask(new Task("", "", Status.NEW, TaskTypes.TASK));
         int task2Id = taskManager.createTask(new Task("", "", Status.NEW, TaskTypes.TASK));
