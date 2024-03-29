@@ -63,6 +63,6 @@ public class Task {
         return "NAME='" + this.name + '\'' +
                 ", description='" + this.description + '\'' +
                 ", id=" + this.id +
-                ", status='" + this.status;
+                ", status='" + this.status + "'";
     }
 }
