@@ -170,7 +170,8 @@ public class FileBackedTaskManager extends InMemoryTaskManager implements TaskMa
                     .map(FileBackedTaskManager::fromString)
                     .forEach(manager::addTaskToMemory);
 
-            tasksInHistory.forEach(id -> {Optional<Task> foundTask = manager.getById(id);
+            tasksInHistory.forEach(id -> {
+                Optional<Task> foundTask = manager.getById(id);
 
                 if (foundTask.isPresent()) {
                     manager.addTaskToMemory(foundTask.get());
@@ -260,8 +261,8 @@ public class FileBackedTaskManager extends InMemoryTaskManager implements TaskMa
             return Optional.empty();
         }
 
-        List<String> ids = history.stream().
-                map(taskEntity -> Integer.toString(taskEntity.getId()))
+        List<String> ids = history.stream()
+                        .map(taskEntity -> Integer.toString(taskEntity.getId()))
                 .collect(Collectors.toList());
 
         return Optional.of(String.join(",", ids));
@@ -274,8 +275,8 @@ public class FileBackedTaskManager extends InMemoryTaskManager implements TaskMa
 
         String[] ids = value.split(",");
 
-        return Arrays.stream(ids).
-                map(Integer::parseInt).
-                collect(Collectors.toList());
+        return Arrays.stream(ids)
+                        .map(Integer::parseInt)
+                                .collect(Collectors.toList());
     }
 }
