@@ -5,56 +5,65 @@ import model.Status;
 import model.Subtask;
 import model.Task;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.time.Instant;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class InMemoryTaskManager implements TaskManager {
-    private List<Task> tasks;
-    private List<Subtask> subtasks;
-    private List<Epic> epics;
+    private final List<Task> tasks;
+    private final List<Subtask> subtasks;
+    private final List<Epic> epics;
     private int nextId;
-    private HistoryManager historyManager;
+    static final HistoryManager historyManager = Managers.getDefaultHistory();
 
     public InMemoryTaskManager() {
         this.tasks = new ArrayList<>();
         this.subtasks = new ArrayList<>();
         this.epics = new ArrayList<>();
         this.nextId = 1;
-        this.historyManager = Managers.getDefaultHistory();
-    }
-
-    public HistoryManager getHistoryManager() {
-        return this.historyManager;
     }
 
     @Override
-    public int createTask(Task task) {
-        task.setId(this.nextId);
-        addTaskDirectly(task);
+    public int createTask(Task newTask) {
+        if (newTask.getStartTime() == null) {
+            return getTaskId(newTask);
+        }
+
+        if (isTaskOverlapping(newTask.getStartTime(), newTask.getEndTime().orElseThrow())) {
+          throw new RuntimeException("Task time is wrong");
+        }
+
+        return getTaskId(newTask);
+    }
+
+    private int getTaskId(Task newTask) {
+        newTask.setId(this.nextId);
+        addTaskToMemory(newTask);
         this.nextId++;
-        return task.getId();
+        return newTask.getId();
     }
 
     @Override
-    public int createEpic(Epic epic) {
-        epic.setId(this.nextId);
-        addTaskDirectly(epic);
-        this.nextId++;
-        return epic.getId();
+    public int createEpic(Epic newEpic) {
+        return getTaskId(newEpic);
     }
 
     @Override
-    public int createSubtask(Subtask subtask, int epicId) {
-        subtask.setId(this.nextId);
-        addTaskDirectly(subtask);
+    public int createSubtask(Subtask newSubtask, int epicId) {
+        if (isTaskOverlapping(newSubtask.getStartTime(), newSubtask.getEndTime().orElseThrow())) {
+            throw new RuntimeException("Task time is wrong");
+        }
+        newSubtask.setId(this.nextId);
+        addTaskToMemory(newSubtask);
         this.nextId++;
-        subtask.setEpicId(epicId);
+        newSubtask.setEpicId(epicId);
 
-        int subtaskId = subtask.getId();
-        Epic epic = findTask(epicId, this.epics);
+        int subtaskId = newSubtask.getId();
+        Epic subtaskEpic = findTask(epicId, this.epics).orElseThrow();
 
-        epic.getSubtaskIds().add(subtaskId);
-        changeEpicStatus(epic);
+        subtaskEpic.addIdToSubtaskIds(subtaskId);
+        changeEpicStatus(subtaskEpic);
+        changeEpicTimeFrame(subtaskEpic);
         return subtaskId;
     }
 
@@ -90,88 +99,116 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public List<Subtask> getEpicSubtasks(int epicId) {
-        Epic epic = findTask(epicId, this.epics);
-        List<Subtask> subtasks = new ArrayList<>();
+        Epic targetEpic = findTask(epicId, this.epics).orElseThrow();
 
-        for (Integer subtaskId : epic.getSubtaskIds()) {
-            Subtask subtask = findTask(subtaskId, this.subtasks);
-            subtasks.add(subtask);
-        }
-
-        return subtasks;
+        return targetEpic.getSubtaskIds()
+                .stream()
+                .map(subtaskId -> findTask(subtaskId, this.subtasks).orElseThrow())
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<Task> getHistory() {
-        return this.historyManager.getHistory();
+        return historyManager.getHistory();
     }
 
     @Override
-    public void updateTask(Task task, int taskId) {
-        Task storedTask = findTask(taskId, this.tasks);
+    public TreeSet<Task> getPrioritizedTasks() {
+        TreeSet<Task> sortedTasks = new TreeSet<>(Comparator.comparing(Task::getStartTime));
 
-        task.setId(taskId);
-        this.tasks.set(this.tasks.indexOf(storedTask), task);
+        this.tasks.stream()
+                .filter(task -> task.getStartTime() != null)
+                .forEach(sortedTasks::add);
+        this.subtasks.stream()
+                .filter(subtask -> subtask.getStartTime() != null)
+                .forEach(sortedTasks::add);
+        this.epics.stream()
+                .filter(epic -> epic.getStartTime() != null)
+                .forEach(sortedTasks::add);
+
+        return sortedTasks;
     }
 
     @Override
-    public void updateSubtask(Subtask subtask, int subtaskId) {
+    public void updateTask(Task updatedtask, int taskId) {
+        Task expectedTask = findTask(taskId, this.tasks).orElseThrow();
 
-        Subtask storedDuty = findTask(subtaskId, this.subtasks);
-        int epicId = storedDuty.getEpicId();
+        updatedtask.setId(taskId);
+        this.tasks.remove(expectedTask);
 
-        subtask.setId(storedDuty.getId());
-        subtask.setEpicId(epicId);
-        this.subtasks.set(this.subtasks.indexOf(storedDuty), subtask);
+        if (isTaskOverlapping(updatedtask.getStartTime(), updatedtask.getEndTime().orElseThrow())) {
+            throw new RuntimeException("Task time is wrong");
+        }
 
-        Epic epic = findTask(epicId, this.epics);
-        changeEpicStatus(epic);
+        this.tasks.add(updatedtask);
     }
 
     @Override
-    public void updateEpic(Epic epic, int epicId) {
-        Epic storedEpic = findTask(epicId, this.epics);
+    public void updateSubtask(Subtask updatedSubtask, int subtaskId) {
+        Subtask expectedSubtask = findTask(subtaskId, this.subtasks).orElseThrow();
+        int epicId = expectedSubtask.getEpicId();
 
-        this.epics.set(this.epics.indexOf(storedEpic), epic);
+        updatedSubtask.setId(expectedSubtask.getId());
+        updatedSubtask.setEpicId(epicId);
+        this.subtasks.remove(expectedSubtask);
 
+        Epic targetEpic = findTask(epicId, this.epics).orElseThrow();
+
+        targetEpic.setStartTime(null);
+        targetEpic.setEndTime(null);
+
+        if (isTaskOverlapping(updatedSubtask.getStartTime(), updatedSubtask.getEndTime().orElseThrow())) {
+            throw new RuntimeException("Task time is wrong");
+        }
+
+        this.subtasks.add(updatedSubtask);
+        changeEpicStatus(targetEpic);
+        changeEpicTimeFrame(targetEpic);
+    }
+
+    @Override
+    public void updateEpic(Epic updatedEpic, int epicId) {
+        Task expectedEpic = findTask(epicId, this.epics).orElseThrow();
+
+        updatedEpic.setId(epicId);
+        this.epics.set(this.epics.indexOf(expectedEpic), updatedEpic);
         this.subtasks.removeIf(task -> task.getEpicId() == epicId);
+        changeEpicTimeFrame(updatedEpic);
     }
 
     @Override
     public void deleteTask(int id) {
         this.tasks.removeIf(task -> task.getId() == id);
-        this.historyManager.remove(id);
+        InMemoryTaskManager.historyManager.remove(id);
     }
 
     @Override
     public void deleteSubtask(int id) {
-        for (Epic value : this.epics) {
-            ArrayList<Integer> subtasksIds = value.getSubtaskIds();
+        this.epics.forEach(epic -> {
+            List<Integer> subtasksIds = epic.getSubtaskIds();
 
             if (subtasksIds.contains(id)) {
-                subtasksIds.remove((Integer) id);
-                changeEpicStatus(value);
+                epic.removeIdFromSubtasksIds(id);
+                changeEpicStatus(epic);
+                changeEpicTimeFrame(epic);
             }
-        }
+        });
 
-        this.subtasks.removeIf(task -> task.getId() == id);
-        this.historyManager.remove(id);
+        this.subtasks.removeIf(subtask -> subtask.getId() == id);
+        InMemoryTaskManager.historyManager.remove(id);
     }
 
     @Override
     public void deleteEpic(int id) {
         List<Integer> subtaskIds = getEpic(id).getSubtaskIds();
 
-        for (Integer subtaskId : subtaskIds) {
-            for (Task task : this.historyManager.getHistory()) {
-                int taskId = task.getId();
+        subtaskIds.forEach(subtaskId ->
+            InMemoryTaskManager.historyManager.getHistory().stream().
+                    mapToInt(Task::getId)
+                    .filter(taskId -> taskId == subtaskId)
+                    .forEach(InMemoryTaskManager.historyManager::remove));
 
-                if (taskId == subtaskId)
-                    this.historyManager.remove(taskId);
-            }
-        }
-
-        this.historyManager.remove(id);
+        InMemoryTaskManager.historyManager.remove(id);
 
         this.subtasks.removeIf(task -> task.getEpicId() == id);
 
@@ -180,7 +217,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void deleteTasks() {
-        this.tasks.forEach(task -> this.historyManager.remove(task.getId()));
+        this.tasks.forEach(task -> InMemoryTaskManager.historyManager.remove(task.getId()));
         this.tasks.clear();
     }
 
@@ -188,87 +225,119 @@ public class InMemoryTaskManager implements TaskManager {
     public void deleteSubtasks() {
         clearSubtasks();
 
-        for (Epic task : this.epics) {
-
-            task.getSubtaskIds().clear();
-            changeEpicStatus(task);
-        }
+        this.epics.forEach(savedEpic -> {
+            savedEpic.clearSubtasksIds();
+            changeEpicStatus(savedEpic);
+        });
     }
 
     @Override
     public void deleteEpics() {
         clearSubtasks();
-        this.epics.forEach(epic -> this.historyManager.remove(epic.getId()));
+        this.epics.forEach(epic -> InMemoryTaskManager.historyManager.remove(epic.getId()));
         this.epics.clear();
     }
 
-    protected void addTaskDirectly(Task task) {
-        switch (task.getType()) {
+    void addTaskToMemory(Task taskToSave) {
+        switch (taskToSave.getType()) {
             case TASK:
-                this.tasks.add(task);
+                this.tasks.add(taskToSave);
                 break;
             case EPIC:
-                this.epics.add((Epic) task);
+                this.epics.add((Epic) taskToSave);
                 break;
             case SUBTASK:
-                this.subtasks.add((Subtask) task);
+                this.subtasks.add((Subtask) taskToSave);
                 break;
         }
     }
 
-    private void changeEpicStatus(Epic epic) {
-        List<Subtask> subtasks = getEpicSubtasks(epic.getId());
+    private void changeEpicStatus(Epic epicToChange) {
+        List<Subtask> epicSubtasks = getEpicSubtasks(epicToChange.getId());
 
-        if (subtasks.isEmpty()) {
-            epic.setStatus(Status.NEW);
+        if (epicSubtasks.isEmpty()) {
+            epicToChange.setTaskStatus(Status.NEW);
         } else {
-            for (Subtask subtask : subtasks) {
-                if (!subtask.getStatus().equals(Status.DONE)) {
-                    epic.setStatus(Status.IN_PROGRESS);
+            for (Subtask subtask : epicSubtasks) {
+                if (!subtask.getTaskStatus().equals(Status.DONE)) {
+                    epicToChange.setTaskStatus(Status.IN_PROGRESS);
                     break;
                 } else {
-                    epic.setStatus(Status.DONE);
+                    epicToChange.setTaskStatus(Status.DONE);
                 }
             }
         }
     }
 
-    private <T extends Task> T findTask(int id, List<T> tasksList) {
-        for (T task : tasksList) {
+    private <T extends Task, V extends T> Optional<T> findTask(int id, List<V> tasksSet) {
+
+        for (T task : tasksSet) {
             if (task.getId() == id) {
-                return task;
+                return Optional.of(task);
             }
         }
-        return null;
+
+        return Optional.empty();
     }
 
-    protected Task getById(int id) {
-        Task task = findTask(id, this.tasks);
-
-        if (task != null) {
-            return task;
-        }
-
-        Task epic = findTask(id, this.epics);
-        if (epic != null) {
-            return epic;
-        }
-
-        return findTask(id, this.subtasks);
+    Optional<Task> getById(int id) {
+        return findTask(id, this.tasks).
+                or(() -> findTask(id, this.epics)).
+                or(() -> findTask(id, this.subtasks));
     }
 
-    protected <T extends Task> T getTaskFromAndSaveToHistory(int taskId, List<T> tasksList) {
-        T task = findTask(taskId, tasksList);
+    private <T extends Task> T getTaskFromAndSaveToHistory(int taskId, List<T> tasksList) {
+        T task = findTask(taskId, tasksList).orElseThrow();
 
-        if (task != null) {
-            historyManager.add(task);
-        }
+        InMemoryTaskManager.historyManager.add(task);
 
         return task;
     }
 
-    protected void clearSubtasks() {
-        this.subtasks.forEach(subtask -> this.historyManager.remove(subtask.getId()));
+    private void clearSubtasks() {
+        this.subtasks.forEach(subtask -> InMemoryTaskManager.historyManager.remove(subtask.getId()));
         this.subtasks.clear();
+    }
+
+    private void changeEpicTimeFrame(Epic epicToChange) {
+        Optional<Instant> startTime = this.subtasks.stream()
+                .filter(subtask -> subtask.getEpicId() == epicToChange.getId())
+                .map(Task::getStartTime)
+                .min(Instant::compareTo);
+
+        Optional<Instant> endTime = this.subtasks.stream()
+                .filter(subtask -> subtask.getEpicId() == epicToChange.getId())
+                .map(Task::getEndTime)
+                .map(Optional::orElseThrow)
+                .min(Instant::compareTo);
+
+        if (startTime.isEmpty() || endTime.isEmpty()) {
+            return;
+        }
+
+        epicToChange.setStartTime(startTime.get());
+        epicToChange.setEndTime(endTime.get());
+    }
+
+    private boolean isTaskOverlapping(Instant taskStartTime, Instant taskEndTime) {
+        if (taskStartTime == null) {
+            return false;
+        }
+
+        TreeSet<Task> sortedTasks = getPrioritizedTasks();
+
+        return sortedTasks.stream()
+                .anyMatch(storedTask -> isOverlapping(taskStartTime, taskEndTime, storedTask));
+    }
+
+    private static boolean isOverlapping(Instant taskStartTime, Instant taskEndTime, Task storedTask) {
+        Instant storedTaskEndTime = storedTask.getEndTime().orElseThrow();
+
+        return taskEndTime == storedTaskEndTime
+                || taskStartTime == storedTask.getStartTime()
+                || (taskStartTime.isBefore(storedTask.getStartTime())
+                && taskStartTime.isBefore(storedTaskEndTime))
+                || taskStartTime.isAfter(storedTask.getStartTime())
+                && taskStartTime.isBefore(storedTaskEndTime);
     }
 }

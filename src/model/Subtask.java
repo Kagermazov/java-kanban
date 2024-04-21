@@ -1,10 +1,14 @@
 package model;
 
+import java.time.Duration;
+import java.time.Instant;
+
 public class Subtask extends Task {
     private int epicId;
 
-    public Subtask(String name, String description, Status status, TaskTypes type) {
-        super(name, description, status, type);
+    public Subtask(String name, String description, Status status, TaskTypes type, Duration subtaskDuration,
+                   Instant startTime) {
+        super(name, description, status, type, subtaskDuration, startTime);
         epicId = -1;
     }
 
@@ -13,6 +17,10 @@ public class Subtask extends Task {
     }
 
     public void setEpicId(int epicId) {
+        if (epicId == this.getId()) {
+            throw new IllegalArgumentException();
+        }
+
         this.epicId = epicId;
     }
 
