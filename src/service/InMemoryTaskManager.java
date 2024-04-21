@@ -203,8 +203,8 @@ public class InMemoryTaskManager implements TaskManager {
         List<Integer> subtaskIds = getEpic(id).getSubtaskIds();
 
         subtaskIds.forEach(subtaskId ->
-            InMemoryTaskManager.historyManager.getHistory().stream().
-                    mapToInt(Task::getId)
+            InMemoryTaskManager.historyManager.getHistory().stream()
+                            .mapToInt(Task::getId)
                     .filter(taskId -> taskId == subtaskId)
                     .forEach(InMemoryTaskManager.historyManager::remove));
 
@@ -281,9 +281,9 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     Optional<Task> getById(int id) {
-        return findTask(id, this.tasks).
-                or(() -> findTask(id, this.epics)).
-                or(() -> findTask(id, this.subtasks));
+        return findTask(id, this.tasks)
+                .or(() -> findTask(id, this.epics))
+                .or(() -> findTask(id, this.subtasks));
     }
 
     private <T extends Task> T getTaskFromAndSaveToHistory(int taskId, List<T> tasksList) {
