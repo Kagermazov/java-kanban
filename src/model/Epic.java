@@ -21,7 +21,7 @@ public class Epic extends Task {
         return new ArrayList<>(this.subtaskIds);
     }
 
-    public void addIdToSubtaskIds(int id){
+    public void addIdToSubtaskIds(int id) {
         if (id == this.getId()) {
             throw new IllegalArgumentException();
         }
