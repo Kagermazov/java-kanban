@@ -158,16 +158,10 @@ class InMemoryTaskManagerTest extends TaskManagerTest<InMemoryTaskManager> {
         super.shouldReturnListWhen_getHistoryMethodCalled(this.manager);
     }
 
-    @DisplayName("Should return a TreeSet when the getPrioritizedTasks called")
+    @DisplayName("Should return a List when the getPrioritizedTasks called")
     @Test
-    void shouldReturnTreeSetWhen_getPrioritizedTasksMethodCalled() {
-        super.shouldReturnTreeSetWhen_getPrioritizedTasksMethodCalled(this.manager);
-    }
-
-    @DisplayName("Should scip a task without start time when the getPrioritizedTasks called")
-    @Test
-    void shouldSkipTaskWithoutStartTimeWhen_getPrioritizedTasksMethodCalled() {
-        super.shouldSkipTaskWithoutStartTimeWhen_getPrioritizedTasksMethodCalled(this.manager);
+    void shouldReturnListWhen_getPrioritizedTasksMethodCalled() {
+        super.shouldReturnListWhen_getPrioritizedTasksMethodCalled(this.manager);
     }
 
     @DisplayName("Should a task status be updated when the updateTask method called")
@@ -222,5 +216,11 @@ class InMemoryTaskManagerTest extends TaskManagerTest<InMemoryTaskManager> {
     @Test
     void shouldReturnEmptyListAfter_deleteEpicsMethodCalled() {
         super.shouldReturnEmptyListAfter_deleteEpicsMethodCalled(this.manager);
+    }
+
+    @DisplayName("Should throw the IllegalArgumentException if tasks don`t overlap")
+    @Test
+    void shouldThrowIllegalArgumentExceptionIfTasksDoNotOverlap() {
+        super.shouldThrowIllegalArgumentExceptionIfTasksDoNotOverlap(manager);
     }
 }

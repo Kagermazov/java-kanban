@@ -4,10 +4,11 @@ import model.*;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NoSuchElementException;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 abstract class TaskManagerTest<T extends TaskManager> {
 
@@ -208,14 +209,14 @@ abstract class TaskManagerTest<T extends TaskManager> {
         assertEquals(expected, actual);
     }
 
-    void shouldReturnTreeSetWhen_getPrioritizedTasksMethodCalled(T manager) {
+    void shouldReturnListWhen_getPrioritizedTasksMethodCalled(T manager) {
         Task testTask = new Task("Task", "", Status.NEW, TaskTypes.TASK, Duration.ofSeconds(1),
                 Instant.EPOCH);
-        Epic testEpic = new Epic("Epic", "", Status.NEW, TaskTypes.EPIC, Duration.ofMinutes(0),
+        Epic testEpic = new Epic("Epic", "", Status.NEW, TaskTypes.EPIC, null,
                 null);
-        Subtask testSubtask = new Subtask("Subtask", "", Status.NEW, TaskTypes.SUBTASK, Duration.ofSeconds(1),
-                Instant.ofEpochSecond(2));
-        TreeSet<Task> expected = new TreeSet<>(Comparator.comparing(Task::getStartTime));
+        Subtask testSubtask = new Subtask("Subtask", "", Status.NEW, TaskTypes.SUBTASK,
+                Duration.ofSeconds(1), Instant.ofEpochSecond(2));
+        List<Task> expected = new ArrayList<>();
 
         manager.createTask(testTask);
         manager.createEpic(testEpic);
@@ -224,29 +225,10 @@ abstract class TaskManagerTest<T extends TaskManager> {
         expected.add(testEpic);
         expected.add(testSubtask);
 
-        TreeSet<Task> actual = manager.getPrioritizedTasks();
+        List<Task> actual = manager.getPrioritizedTasks();
 
-        assertEquals(expected, actual);
-    }
-
-    void shouldSkipTaskWithoutStartTimeWhen_getPrioritizedTasksMethodCalled(T manager) {
-        Task testTask = new Task("Task", "", Status.NEW, TaskTypes.TASK, Duration.ofMinutes(42),
-                null);
-        Epic testEpic = new Epic("Epic", "", Status.NEW, TaskTypes.EPIC, null,
-                null);
-        Subtask testSubtask = new Subtask("Subtask", "", Status.NEW, TaskTypes.SUBTASK, Duration.ofMinutes(42),
-                Instant.ofEpochSecond(2));
-        TreeSet<Task> expected = new TreeSet<>(Comparator.comparing(Task::getStartTime));
-
-        manager.createTask(testTask);
-        manager.createEpic(testEpic);
-        manager.createSubtask(testSubtask, testEpic.getId());
-        expected.add(testEpic);
-        expected.add(testSubtask);
-
-        TreeSet<Task> actual = manager.getPrioritizedTasks();
-
-        assertEquals(expected, actual);
+        assertTrue(expected.size() == actual.size() && expected.containsAll(actual)
+                && actual.containsAll(expected));
     }
 
     void shouldTaskStatusBeUpdatedWhen_updateTaskMethodCalled(T manager) {
@@ -314,10 +296,9 @@ abstract class TaskManagerTest<T extends TaskManager> {
     void shouldDeleteEpicWhen_deleteEpicMethodCalled(T manager) {
         Epic testEpic = new Epic("", "", Status.NEW, TaskTypes.EPIC, null,
                 null);
+        int testEpicId = manager.createEpic(testEpic);
 
-        manager.createEpic(testEpic);
-        manager.deleteEpic(testEpic.getId());
-
+        manager.deleteEpic(testEpicId);
         assertThrows(NoSuchElementException.class, () -> manager.getTask(1));
     }
 
@@ -356,13 +337,13 @@ abstract class TaskManagerTest<T extends TaskManager> {
         assertEquals(expected, manager.getEpics());
     }
 
-    void shouldThrowRuntimeExceptionIfTasksDoNotOverlap(T manager) {
+    void shouldThrowIllegalArgumentExceptionIfTasksDoNotOverlap(T manager) {
         Task testTask = new Task("", "", Status.NEW, TaskTypes.TASK, Duration.ofSeconds(1),
                 Instant.EPOCH);
         Task testTask2 = new Task("", "", Status.NEW, TaskTypes.TASK, Duration.ofSeconds(1),
                 Instant.EPOCH);
 
         manager.createTask(testTask);
-        assertThrows(RuntimeException.class, () -> manager.createTask(testTask2));
+        assertThrows(IllegalArgumentException.class, () -> manager.createTask(testTask2));
     }
 }

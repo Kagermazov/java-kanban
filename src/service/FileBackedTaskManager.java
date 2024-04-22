@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class FileBackedTaskManager extends InMemoryTaskManager implements TaskManager {
@@ -29,7 +28,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager implements TaskMa
 
     @Override
     public int createEpic(Epic newEpic) {
-        int id = super.createTask(newEpic);
+        int id = super.createEpic(newEpic);
 
         save();
         return id;
@@ -263,7 +262,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager implements TaskMa
 
         List<String> ids = history.stream()
                         .map(taskEntity -> Integer.toString(taskEntity.getId()))
-                .collect(Collectors.toList());
+                .toList();
 
         return Optional.of(String.join(",", ids));
     }
@@ -277,6 +276,6 @@ public class FileBackedTaskManager extends InMemoryTaskManager implements TaskMa
 
         return Arrays.stream(ids)
                         .map(Integer::parseInt)
-                                .collect(Collectors.toList());
+                                .toList();
     }
 }

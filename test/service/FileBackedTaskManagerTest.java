@@ -137,16 +137,10 @@ class FileBackedTaskManagerTest extends TaskManagerTest<FileBackedTaskManager> {
         super.shouldReturnListWhen_getHistoryMethodCalled(this.manager);
     }
 
-    @DisplayName("Should return a TreeSet when the getPrioritizedTasks method called")
+    @DisplayName("Should return a List when the getPrioritizedTasks method called")
     @Test
-    void shouldReturnTreeSetWhen_getPrioritizedTasksMethodCalled() {
-        super.shouldReturnTreeSetWhen_getPrioritizedTasksMethodCalled(this.manager);
-    }
-
-    @DisplayName("Should scip a task without start time when the getPrioritizedTasks method called")
-    @Test
-    void shouldSkipTaskWithoutStartTimeWhen_getPrioritizedTasksMethodCalled() {
-        super.shouldSkipTaskWithoutStartTimeWhen_getPrioritizedTasksMethodCalled(this.manager);
+    void shouldReturnListWhen_getPrioritizedTasksMethodCalled() {
+        super.shouldReturnListWhen_getPrioritizedTasksMethodCalled(this.manager);
     }
 
     @DisplayName("Should a task status be updated when the updateTask method called")
@@ -207,5 +201,11 @@ class FileBackedTaskManagerTest extends TaskManagerTest<FileBackedTaskManager> {
     @Test
     void shouldThrowFileNotFoundExceptionWhen_loadFromFileMethodCalledIfCSVFileDoesNotExist() {
             assertThrows(FileNotFoundException.class, () -> FileBackedTaskManager.loadFromFile(null));
+    }
+
+    @DisplayName("Should throw the IllegalArgumentException if tasks don`t overlap")
+    @Test
+    void shouldThrowIllegalArgumentExceptionIfTasksDoNotOverlap() {
+        super.shouldThrowIllegalArgumentExceptionIfTasksDoNotOverlap(manager);
     }
 }
