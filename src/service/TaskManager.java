@@ -8,11 +8,11 @@ import java.util.List;
 
 public interface TaskManager {
 
-    int createTask(Task task);
+    int createTask(Task newTask);
 
-    int createEpic(Epic epic);
+    int createSubtask(Subtask newSubtask, int epicId);
 
-    int createSubtask(Subtask subtask, int epicId);
+    int createEpic(Epic newEpic);
 
     List<Task> getTasks();
 
@@ -30,11 +30,13 @@ public interface TaskManager {
 
     List<Task> getHistory();
 
-    void updateTask(Task task, int taskId);
+    List<Task> getPrioritizedTasks();
 
-    void updateSubtask(Subtask subtask, int subtaskId);
+    void updateTask(Task updatedTask, int taskId);
 
-    void updateEpic(Epic epic, int id);
+    void updateSubtask(Subtask updatedSubtask, int subtaskId);
+
+    void updateEpic(Epic updatedEpic, int id);
 
     void deleteTask(int id);
 
