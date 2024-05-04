@@ -20,7 +20,7 @@ public class DurationAdapter extends TypeAdapter<Duration> {
         if (line.equals("null")) {
             return null;
         } else {
-            return Duration.parse (line);
+            return Duration.parse(line);
         }
     }
 }
