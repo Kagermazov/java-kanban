@@ -342,7 +342,6 @@ public class InMemoryTaskManager implements TaskManager {
         boolean isTaskStartTimeAfterStoredTaskStartTimeAndBeforeStoredTaskEndTime
                 = taskStartTime.isAfter(storedTask.getStartTime())
                 && taskStartTime.isBefore(storedTaskEndTime);
-        
         return isTaskEndTimeEqualStoredEndTime
                 || isTaskStartTimeEqualStoredStartTime
                 || isTaskStartTimeBeforeStoredTaskStartAndEndTime
