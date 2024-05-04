@@ -88,9 +88,12 @@ public class Task {
 
     @Override
     public String toString() {
-        return "NAME='" + this.name + '\'' +
-                ", description='" + this.description + '\'' +
-                ", id=" + this.id +
-                ", status='" + this.taskStatus + "'";
+        return "name = " + this.name +
+                ", description = " + this.description +
+                ", id = " + this.id +
+                ", taskStatus = " + this.taskStatus +
+                ", type = " + this.type +
+                ", duration = " + this.duration +
+                ", startTime = " + this.startTime;
     }
 }

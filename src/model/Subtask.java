@@ -9,11 +9,11 @@ public class Subtask extends Task {
     public Subtask(String name, String description, Status status, TaskTypes type, Duration subtaskDuration,
                    Instant startTime) {
         super(name, description, status, type, subtaskDuration, startTime);
-        epicId = -1;
+        this.epicId = -1;
     }
 
     public int getEpicId() {
-        return epicId;
+        return this.epicId;
     }
 
     public void setEpicId(int epicId) {
@@ -26,9 +26,7 @@ public class Subtask extends Task {
 
     @Override
     public String toString() {
-        return "Subtask{" +
-                "epicId=" + epicId +
-                ", " + super.toString() +
-                "}";
+        return "epicId = " + this.epicId +
+                ", " + super.toString();
     }
 }

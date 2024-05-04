@@ -111,7 +111,8 @@ class TaskTest {
     @DisplayName("Should return a string when the toString method called")
     @Test
     void shouldReturnStringWhen_toStringMethodCalled() {
-        String expected = "NAME='Name', description='Description', id=-1, status='NEW'";
+        String expected = "name = Name, description = Description, id = -1, taskStatus = NEW, type = TASK, " +
+                "duration = PT42M, startTime = 1970-01-01T00:00:00Z";
 
         assertEquals(expected, testTask.toString());
     }

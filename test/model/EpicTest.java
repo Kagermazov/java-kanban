@@ -76,7 +76,8 @@ class EpicTest {
     @DisplayName("Should return correct string when toString method called")
     @Test
     void shouldReturnCorrectStringWhen_toStringMethodCalled() {
-        String expected = "Epic{subtaskIds=[], NAME='', description='', id=-1, status='NEW'}";
+        String expected = "subtaskIds = [], name = , description = , id = -1, taskStatus = NEW, type = EPIC, " +
+                "duration = PT42M, startTime = 1970-01-01T00:00:00Z";
 
         assertEquals(expected, this.testEpic.toString());
     }

@@ -34,16 +34,16 @@ class InMemoryTaskManagerTest extends TaskManagerTest<InMemoryTaskManager> {
         super.shouldReturnIntegerWhen_createTaskMethodCalled(this.manager);
     }
 
-    @DisplayName("Should throw a RuntimeException when task start times equal")
+    @DisplayName("Should throw a IllegalArgumentException when task start times equal")
     @Test
-    void shouldThrowRuntimeExceptionWhenTaskStartTimesEqual() {
+    void shouldThrowRIllegalArgumentExceptionWhenTaskStartTimesEqual() {
         Task testTask = new Task("", "", Status.NEW, TaskTypes.TASK, Duration.ofSeconds(1),
                 Instant.EPOCH);
         Task testTask2 = new Task("", "", Status.NEW, TaskTypes.TASK, Duration.ofSeconds(1),
                 Instant.EPOCH);
 
         this.manager.createTask(testTask);
-        assertThrows(RuntimeException.class, () -> this.manager.createTask(testTask2));
+        assertThrows(IllegalArgumentException.class, () -> this.manager.createTask(testTask2));
     }
 
     @DisplayName("Should throw a RuntimeException when task start time is before an other task start time and " +

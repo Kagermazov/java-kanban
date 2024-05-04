@@ -34,8 +34,8 @@ public class InMemoryTaskManager implements TaskManager {
         return getTaskId(newTask);
     }
 
-    private void checkOverlapping(Task newTask) {
-        if (isTaskOverlapping(newTask.getStartTime(), newTask.getEndTime().orElseThrow())) {
+    private void checkOverlapping(Task taskToCheck) {
+        if (isTaskOverlapping(taskToCheck)) {
           throw new IllegalArgumentException("Task time is wrong");
         }
     }
@@ -57,9 +57,9 @@ public class InMemoryTaskManager implements TaskManager {
     public int createSubtask(Subtask newSubtask, int epicId) {
         checkOverlapping(newSubtask);
         newSubtask.setId(this.nextId);
-        addTaskToMemory(newSubtask);
         this.nextId++;
         newSubtask.setEpicId(epicId);
+        addTaskToMemory(newSubtask);
         this.prioritizedTasks.add(newSubtask);
 
         int subtaskId = newSubtask.getId();
@@ -123,12 +123,13 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void updateTask(Task updatedtask, int taskId) {
+        updatedtask.setId(taskId);
+        checkOverlapping(updatedtask);
+
         Task expectedTask = findTask(taskId, this.tasks).orElseThrow();
 
-        updatedtask.setId(taskId);
         this.tasks.remove(expectedTask);
         this.prioritizedTasks.removeIf(task -> task.equals(expectedTask));
-        checkOverlapping(updatedtask);
         this.tasks.add(updatedtask);
         this.prioritizedTasks.add(updatedtask);
     }
@@ -170,13 +171,20 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void deleteTask(int id) {
-        this.prioritizedTasks.removeIf(task -> task.equals(getTask(id)));
-        this.tasks.removeIf(task -> task.getId() == id);
+        if (!this.prioritizedTasks.removeIf(task -> task.equals(getTask(id)))
+                || !this.tasks.removeIf(task -> task.getId() == id)) {
+            throw new NoSuchElementException("Task with id " + id + " not found");
+        }
+
         InMemoryTaskManager.historyManager.remove(id);
     }
 
     @Override
     public void deleteSubtask(int id) {
+        if (this.subtasks.stream().noneMatch(subtask -> subtask.getId() == id)) {
+            throw new NoSuchElementException(id + " not found");
+        }
+
         this.epics.forEach(epic -> {
             List<Integer> subtasksIds = epic.getSubtaskIds();
 
@@ -237,15 +245,9 @@ public class InMemoryTaskManager implements TaskManager {
 
     void addTaskToMemory(Task taskToSave) {
         switch (taskToSave.getType()) {
-            case TASK:
-                this.tasks.add(taskToSave);
-                break;
-            case EPIC:
-                this.epics.add((Epic) taskToSave);
-                break;
-            case SUBTASK:
-                this.subtasks.add((Subtask) taskToSave);
-                break;
+            case TASK -> this.tasks.add(taskToSave);
+            case EPIC -> this.epics.add((Epic) taskToSave);
+            case SUBTASK -> this.subtasks.add((Subtask) taskToSave);
         }
     }
 
@@ -316,7 +318,10 @@ public class InMemoryTaskManager implements TaskManager {
         epicToChange.setEndTime(endTime.get());
     }
 
-    private boolean isTaskOverlapping(Instant taskStartTime, Instant taskEndTime) {
+    private boolean isTaskOverlapping(Task taskToCheck) {
+        Instant taskStartTime = taskToCheck.getStartTime();
+        Instant taskEndTime = taskToCheck.getEndTime().orElseThrow();
+
         if (taskStartTime == null) {
             return false;
         }
@@ -324,18 +329,23 @@ public class InMemoryTaskManager implements TaskManager {
         List<Task> sortedTasks = getPrioritizedTasks();
 
         return sortedTasks.stream()
-                .filter(storedTask -> storedTask.getStartTime() != null)
+                .filter(storedTask -> storedTask.getStartTime() != null && storedTask.getId() != taskToCheck.getId())
                 .anyMatch(storedTask -> isOverlapping(taskStartTime, taskEndTime, storedTask));
     }
 
     private static boolean isOverlapping(Instant taskStartTime, Instant taskEndTime, Task storedTask) {
         Instant storedTaskEndTime = storedTask.getEndTime().orElseThrow();
-
-        return taskEndTime == storedTaskEndTime
-                || taskStartTime == storedTask.getStartTime()
-                || (taskStartTime.isBefore(storedTask.getStartTime())
-                && taskStartTime.isBefore(storedTaskEndTime))
-                || taskStartTime.isAfter(storedTask.getStartTime())
+        boolean isTaskEndTimeEqualStoredEndTime = taskEndTime == storedTaskEndTime;
+        boolean isTaskStartTimeEqualStoredStartTime = taskStartTime == storedTask.getStartTime();
+        boolean isTaskStartTimeBeforeStoredTaskStartAndEndTime = taskStartTime.isBefore(storedTask.getStartTime())
                 && taskStartTime.isBefore(storedTaskEndTime);
+        boolean isTaskStartTimeAfterStoredTaskStartTimeAndBeforeStoredTaskEndTime
+                = taskStartTime.isAfter(storedTask.getStartTime())
+                && taskStartTime.isBefore(storedTaskEndTime);
+        
+        return isTaskEndTimeEqualStoredEndTime
+                || isTaskStartTimeEqualStoredStartTime
+                || isTaskStartTimeBeforeStoredTaskStartAndEndTime
+                || isTaskStartTimeAfterStoredTaskStartTimeAndBeforeStoredTaskEndTime;
     }
 }

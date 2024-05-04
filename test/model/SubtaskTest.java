@@ -53,7 +53,8 @@ class SubtaskTest {
     @DisplayName("Should return a string when toString method called")
     @Test
     void shouldReturnStringWhen_toStringMethodCalled() {
-        String expected = "Subtask{epicId=-1, NAME='', description='', id=-1, status='NEW'}";
+        String expected = "epicId = -1, name = , description = , id = -1, taskStatus = NEW, type = SUBTASK, " +
+                "duration = PT42M, startTime = 1970-01-01T00:00:00Z";
 
         assertEquals(expected, testSubtask.toString());
     }
