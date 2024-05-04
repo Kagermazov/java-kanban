@@ -16,7 +16,7 @@ public class SubtasksHandler extends BaseHttpHandler implements HttpHandler {
     }
 
     @Override
-    public void delete(HttpExchange exchanger,String[] splitPath) throws IOException{
+    public void delete(HttpExchange exchanger,String[] splitPath) throws IOException {
         int subtaskId = -1;
 
         if (splitPath.length == 3) {
