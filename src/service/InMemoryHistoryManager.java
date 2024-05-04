@@ -18,25 +18,30 @@ public class InMemoryHistoryManager implements HistoryManager {
     }
 
     @Override
-    public void add(Task task) {
-        if (task == null) {
+    public void add(Task newTask) {
+        if (newTask == null) {
             return;
         }
 
-        int taskId = task.getId();
+        int taskId = newTask.getId();
 
-        if (idToTask.containsKey(taskId)) {
+        if (this.idToTask.containsKey(taskId)) {
             this.remove(taskId);
         }
 
-        this.linkLast(task);
-
-        idToTask.put(taskId, this.tail);
+        this.linkLast(newTask);
+        this.idToTask.put(taskId, this.tail);
     }
 
     @Override
     public void remove(int id) {
-        removeNode(this.idToTask.get(id));
+        Node nodeToRemove = this.idToTask.get(id);
+
+        if (nodeToRemove == null) {
+            return;
+        }
+
+        removeNode(nodeToRemove);
         this.idToTask.remove(id);
     }
 
@@ -55,25 +60,29 @@ public class InMemoryHistoryManager implements HistoryManager {
 
     private List<Task> getTasks() {
         List<Task> tasks = new ArrayList<>();
-        Node node = this.head;
+        Node savedNode = this.head;
 
-        while (node != null) {
-            tasks.add(node.data);
-            node = node.next;
+        while (savedNode != null) {
+            tasks.add(savedNode.data);
+            savedNode = savedNode.next;
         }
 
         return tasks;
     }
 
-    private void removeNode(Node node) {
-        if (node == this.head) {
-            this.head = node.next;
-        } else if (node == this.tail) {
-            this.tail = node.prev;
+    private void removeNode(Node nodeToRemove) {
+        if (nodeToRemove == null) {
+            return;
+        }
+
+        if (nodeToRemove == this.head) {
+            this.head = nodeToRemove.next;
+        } else if (nodeToRemove == this.tail) {
+            this.tail = nodeToRemove.prev;
             this.tail.next = null;
         } else {
-            Node prev = node.prev;
-            Node next = node.next;
+            Node prev = nodeToRemove.prev;
+            Node next = nodeToRemove.next;
             prev.next = next;
             next.prev = prev;
         }
